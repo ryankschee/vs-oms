@@ -1,0 +1,7 @@
+spring:
+    application:
+        name: oms-client
+
+server:
+  port: 8091
+  

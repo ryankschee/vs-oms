@@ -1,0 +1,18 @@
+[
+    {
+        "clientId": 1,
+        "productCode": "P001",
+        "quantity": 100,
+        "type": "BUY",
+        "price": 123.4567,
+        "currencyCode": "USD"
+    },
+    {
+        "clientId": 2,
+        "productCode": "P001",
+        "quantity": 200,
+        "type": "SELL",
+        "price": 123.4567,
+        "currencyCode": "USD"
+    }
+]

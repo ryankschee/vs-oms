@@ -22,8 +22,10 @@ public class Order {
     private Long id;
     private String clientCode;
     private String productCode;
-    private int quantity;  // Number of units
-    private double price;  // Order price
-    private String type;   // Buy or Sell
+    private int quantity;               // Number of units
+    private double price;               // Order price
+    private String currencyCode;        // Currency code
+    private String type;                // Buy or Sell
     private LocalDateTime submissionTime;
+    private String status;              // Open, PartiallyFilled, Filled, Cancelled, Expired
 }
