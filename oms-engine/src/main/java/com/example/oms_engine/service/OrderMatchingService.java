@@ -1,7 +1,7 @@
 package com.example.oms_engine.service;
 
 import java.time.LocalDateTime;
-import java.util.PriorityQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 
 import org.springframework.stereotype.Service;
 
@@ -23,27 +23,27 @@ public class OrderMatchingService {
     private final AssetService assetService;
     private final TradeRepository tradeRepository;
 
-    private PriorityQueue<Order> buyOrders;
-    private PriorityQueue<Order> sellOrders;
+    private PriorityBlockingQueue<Order> buyOrders;
+    private PriorityBlockingQueue<Order> sellOrders;
 
     @PostConstruct
     public void init() {
-        buyOrders = new PriorityQueue<>((o1, o2) -> {
+        buyOrders = new PriorityBlockingQueue<>(100, (o1, o2) -> {
             if (o1.getPrice() == o2.getPrice()) {
                 return o1.getSubmissionTime().compareTo(o2.getSubmissionTime());
             }
-            return Double.compare(o2.getPrice(), o1.getPrice());  // Highest price priority
+            return Double.compare(o2.getPrice(), o1.getPrice());  // BUY - Highest price priority
         });
 
-        sellOrders = new PriorityQueue<>((o1, o2) -> {
+        sellOrders = new PriorityBlockingQueue<>(100, (o1, o2) -> {
             if (o1.getPrice() == o2.getPrice()) {
                 return o1.getSubmissionTime().compareTo(o2.getSubmissionTime());
             }
-            return Double.compare(o1.getPrice(), o2.getPrice());  // Lowest price priority
+            return Double.compare(o1.getPrice(), o2.getPrice());  // SELL - Lowest price priority
         });
     }
 
-    public void addOrder(Order order) {
+    public synchronized void addOrder(Order order) {
         Asset asset = assetService.getAssetByProductCode(order.getProductCode());
         if (asset == null || order.getQuantity() % asset.getMinOrderQuantity() != 0) {
             throw new RuntimeException("Invalid asset or quantity does not meet the minimum order requirements.");
@@ -59,7 +59,7 @@ public class OrderMatchingService {
         }
     }
 
-    private void matchOrder(Order order, PriorityQueue<Order> oppositeOrders) {
+    private synchronized void matchOrder(Order order, PriorityBlockingQueue<Order> oppositeOrders) {
         while (!oppositeOrders.isEmpty()) {
             Order oppositeOrder = oppositeOrders.peek();
             log.info("Matching: {} with {}", order, oppositeOrder);
@@ -142,12 +142,12 @@ public class OrderMatchingService {
         }
     }
 
-    public void checkForExpiredOrders() {
+    public synchronized void checkForExpiredOrders() {
         checkAndExpireOrders(buyOrders);
         checkAndExpireOrders(sellOrders);
     }
 
-    private void checkAndExpireOrders(PriorityQueue<Order> orders) {
+    private synchronized void checkAndExpireOrders(PriorityBlockingQueue<Order> orders) {
         LocalDateTime now = LocalDateTime.now();
         orders.removeIf(order -> {
             if (order.getSubmissionTime().isBefore(now.minusHours(48))) {
